@@ -25,12 +25,60 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Plugin example app'),
         ),
-        body: const TestUnit(
-          level: 1,
-          color: Colors.indigo,
+        body: MultiLevelDraggableParent(
           child: TestUnit(
-            color: Colors.indigoAccent,
-            level: 2,
+            pos: const [0],
+            color: Colors.indigo,
+            itemBuilder: (context, index) {
+              if (index == 4) {
+                return Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  key: Key('${[0, 0]} test $index'),
+                  child: TestUnit(
+                    color: Colors.indigoAccent,
+                    pos: const [0, 0],
+                    itemBuilder: (context, index) {
+                      if (index == 4) {
+                        return Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          key: Key('${[0, 0, 0]} test $index'),
+                          child: TestUnit(
+                            color: Colors.indigoAccent,
+                            pos: const [0, 0, 0],
+                            itemBuilder: (context, index) {
+                              return Card(
+                                key: Key('${[0, 0, 0]} test $index'),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text('test $index'),
+                                ),
+                              );
+                            },
+                            itemCount: 5,
+                          ),
+                        );
+                      }
+                      return Card(
+                        key: Key('${[0, 0]} test $index'),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text('test $index'),
+                        ),
+                      );
+                    },
+                    itemCount: 5,
+                  ),
+                );
+              }
+              return Card(
+                key: Key('${[0]} test $index'),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text('test $index'),
+                ),
+              );
+            },
+            itemCount: 5,
           ),
         ),
       ),
@@ -39,11 +87,18 @@ class _MyAppState extends State<MyApp> {
 }
 
 class TestUnit extends StatelessWidget {
-  final Widget? child;
   final Color color;
-  final int level;
+  final List<int> pos;
+  final Widget Function(BuildContext context, int index) itemBuilder;
+  final int itemCount;
 
-  const TestUnit({this.child, required this.level, Key? key, required this.color}) : super(key: key);
+  const TestUnit(
+      {required this.color,
+      required this.pos,
+      required this.itemBuilder,
+      required this.itemCount,
+      Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -52,19 +107,17 @@ class TestUnit extends StatelessWidget {
       child: ListView(
         shrinkWrap: true,
         children: [
-          Text('level $level'),
+          Text('level $pos'),
           MultiLevelDraggable(
-              itemBuilder: (context, index) => Card(
-                    key: Key('$level test $index'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text('test $index'),
-                    ),
-                  ),
-              itemCount: 10),
-          if (child != null) Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: child!,
+            itemBuilder: itemBuilder,
+            itemCount: itemCount,
+            removeFunction: (BuildContext context, int index) {
+              print("removed $pos $index");
+            },
+            insertFunction: (BuildContext context, List<int> start, int index) {
+              print("insert $pos $index");
+            },
+            pos: pos,
           ),
         ],
       ),

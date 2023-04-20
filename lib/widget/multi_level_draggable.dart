@@ -1,11 +1,46 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+
+class MultiLevelDraggableParent extends StatefulWidget {
+  final Widget child;
+
+  const MultiLevelDraggableParent({required this.child, Key? key})
+      : super(key: key);
+
+  @override
+  State<MultiLevelDraggableParent> createState() =>
+      MultiLevelDraggableParentState();
+}
+
+class MultiLevelDraggableParentState extends State<MultiLevelDraggableParent> {
+  MultiLevelDraggableState? currentDragOn;
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
+  }
+
+  static MultiLevelDraggableParentState? maybeOf(BuildContext context) {
+    return context.findAncestorStateOfType<MultiLevelDraggableParentState>();
+  }
+}
 
 class MultiLevelDraggable extends StatefulWidget {
   final Widget Function(BuildContext context, int index) itemBuilder;
+  final void Function(BuildContext context, int index) removeFunction;
+  final void Function(BuildContext context, List<int> start, int index)
+      insertFunction;
   final int itemCount;
+  final List<int> pos;
 
   const MultiLevelDraggable(
-      {required this.itemBuilder, required this.itemCount, Key? key})
+      {required this.itemBuilder,
+      required this.itemCount,
+      required this.removeFunction,
+      required this.insertFunction,
+      required this.pos,
+      Key? key})
       : super(key: key);
 
   @override
@@ -23,10 +58,14 @@ class MultiLevelDraggableState extends State<MultiLevelDraggable> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      shrinkWrap: true,
-      itemBuilder: (context, index) => itemBuilder(context, index),
-      itemCount: widget.itemCount,
+    return MetaData(
+      metaData: this,
+      behavior: HitTestBehavior.translucent,
+      child: ListView.builder(
+        shrinkWrap: true,
+        itemBuilder: (context, index) => itemBuilder(context, index),
+        itemCount: widget.itemCount,
+      ),
     );
   }
 
@@ -51,19 +90,50 @@ class MultiLevelDraggableState extends State<MultiLevelDraggable> {
     overlay.insert(overlayEntry!);
   }
 
-  void dragUpdate(Offset position) {
+  Iterable<MultiLevelDraggableState> getTargets(Iterable<HitTestEntry> path) {
+    final List<MultiLevelDraggableState> targets = <MultiLevelDraggableState>[];
+    for (final HitTestEntry entry in path) {
+      final HitTestTarget target = entry.target;
+
+      if (target is RenderMetaData) {
+        targets.add(target.metaData);
+      }
+    }
+    return targets;
+  }
+
+  void dragUpdate(DragUpdateDetails details) {
+    final HitTestResult result = HitTestResult();
+    WidgetsBinding.instance.hitTest(result, details.globalPosition);
+    final List<MultiLevelDraggableState> targets =
+        getTargets(result.path).toList();
+    var parent = MultiLevelDraggableParentState.maybeOf(context);
+    assert(parent != null);
+    if (targets.isNotEmpty) {
+      parent?.setState(() {
+        parent.currentDragOn = targets.first;
+      });
+    }
     setState(() {
-      dragData?.dragPosition += position;
+      dragData?.dragPosition += details.delta;
       overlayEntry?.markNeedsBuild();
     });
   }
 
   void dragEnd() {
+    insert(dragData!);
     var item = items[dragData!.index]!;
     item.isDrag = false;
     dragData = null;
     overlayEntry?.remove();
     overlayEntry = null;
+  }
+
+  void insert(DragData data) {
+    var parent = MultiLevelDraggableParentState.maybeOf(context);
+    widget.removeFunction(context, data.index);
+    parent?.currentDragOn?.widget
+        .insertFunction(context, widget.pos, data.index);
   }
 
   void register(
@@ -96,6 +166,7 @@ class MultiLevelDraggableChild extends StatefulWidget {
 class MultiLevelDraggableChildState extends State<MultiLevelDraggableChild> {
   Offset offset = const Offset(0, 0);
   bool isDrag = false;
+  bool isSelected = false;
   late MultiLevelDraggableState multiLevelDraggableState;
 
   @override
@@ -108,7 +179,7 @@ class MultiLevelDraggableChildState extends State<MultiLevelDraggableChild> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onPanDown: (details) {
+      onPanStart: (details) {
         setState(() {
           multiLevelDraggableState.dragData = DragData(
               capturedThemes: widget.capturedThemes,
@@ -122,13 +193,14 @@ class MultiLevelDraggableChildState extends State<MultiLevelDraggableChild> {
       },
       onPanUpdate: (details) {
         setState(() {
-          multiLevelDraggableState.dragUpdate(details.delta);
+          multiLevelDraggableState.dragUpdate(details);
         });
       },
       onPanEnd: (DragEndDetails details) {
         setState(() {
           multiLevelDraggableState.dragEnd();
           isDrag = false;
+          isSelected = false;
         });
       },
       child: isDrag
