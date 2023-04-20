@@ -10,11 +10,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  freezed_annotation: any
+  json_annotation: any
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
+  freezed: ^2.2.0
+  json_serializable: any
+  build_runner: any
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

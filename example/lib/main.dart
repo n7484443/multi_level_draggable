@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:multi_level_draggable/widget/multi_level_draggable.dart';
+import 'package:multi_level_draggable/util/pos.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,20 +14,35 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  List data = [0, 1, 2, 3, [0, 1, 2, 3, [0, 1, 2, 3, 4], 4, 5, 6]];
+  List data = [
+    0,
+    1,
+    2,
+    3,
+    [
+      0,
+      1,
+      2,
+      3,
+      [0, 1, 2, 3, 4],
+      4,
+      5,
+      6
+    ]
+  ];
 
   @override
   void initState() {
     super.initState();
   }
 
-  Widget createNested(List<int> currentPos, List dataInput){
+  Widget createNested(Pos currentPos, List dataInput) {
     return TestUnit(
       color: Colors.indigoAccent,
       pos: currentPos,
       itemBuilder: (context, index) {
-        var pos = [...currentPos, index];
-        if(dataInput[index] is List){
+        var pos = currentPos.addLast(index);
+        if (dataInput[index] is List) {
           return Padding(
             padding: const EdgeInsets.all(16.0),
             key: Key('$pos test $index'),
@@ -42,6 +58,26 @@ class _MyAppState extends State<MyApp> {
         );
       },
       itemCount: dataInput.length,
+      removeFunction: (context, index) {
+        setState(() {
+          List currentArray = data;
+          for (var i in currentPos.data) {
+            currentArray = currentArray[i];
+          }
+          currentArray.removeAt(index);
+        });
+      },
+      insertFunction: (context,
+          {required Pos from, required Pos to, required dynamic removed}) {
+        setState(() {
+          print(to);
+          var currentArray = data;
+          for (var i in to.removeLast().data) {
+            currentArray = currentArray[i];
+          }
+          currentArray.insert(to.last, removed);
+        });
+      },
     );
   }
 
@@ -53,7 +89,7 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: MultiLevelDraggableParent(
-          child: createNested([], data),
+          child: createNested(const Pos(), data),
         ),
       ),
     );
@@ -62,8 +98,13 @@ class _MyAppState extends State<MyApp> {
 
 class TestUnit extends StatelessWidget {
   final Color color;
-  final List<int> pos;
+  final Pos pos;
   final Widget Function(BuildContext context, int index) itemBuilder;
+  final dynamic Function(BuildContext context, int index) removeFunction;
+  final void Function(BuildContext context,
+      {required Pos from,
+      required Pos to,
+      required dynamic removed}) insertFunction;
   final int itemCount;
 
   const TestUnit(
@@ -71,6 +112,8 @@ class TestUnit extends StatelessWidget {
       required this.pos,
       required this.itemBuilder,
       required this.itemCount,
+      required this.removeFunction,
+      required this.insertFunction,
       Key? key})
       : super(key: key);
 
@@ -85,12 +128,8 @@ class TestUnit extends StatelessWidget {
           MultiLevelDraggable(
             itemBuilder: itemBuilder,
             itemCount: itemCount,
-            removeFunction: (BuildContext context, int index) {
-              print("removed $pos $index");
-            },
-            insertFunction: (BuildContext context, List<int> start, int index) {
-              print("insert $pos $index");
-            },
+            removeFunction: removeFunction,
+            insertFunction: insertFunction,
             pos: pos,
           ),
         ],

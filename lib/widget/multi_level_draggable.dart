@@ -2,6 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+import '../util/pos.dart';
+
 class MultiLevelDraggableParent extends StatefulWidget {
   final Widget child;
 
@@ -28,11 +30,13 @@ class MultiLevelDraggableParentState extends State<MultiLevelDraggableParent> {
 
 class MultiLevelDraggable extends StatefulWidget {
   final Widget Function(BuildContext context, int index) itemBuilder;
-  final void Function(BuildContext context, int index) removeFunction;
-  final void Function(BuildContext context, List<int> start, int index)
-      insertFunction;
+  final dynamic Function(BuildContext context, int index) removeFunction;
+  final void Function(BuildContext context,
+      {required Pos from,
+      required Pos to,
+      required dynamic removed}) insertFunction;
   final int itemCount;
-  final List<int> pos;
+  final Pos pos;
 
   const MultiLevelDraggable(
       {required this.itemBuilder,
@@ -131,9 +135,14 @@ class MultiLevelDraggableState extends State<MultiLevelDraggable> {
 
   void insert(DragData data) {
     var parent = MultiLevelDraggableParentState.maybeOf(context);
-    widget.removeFunction(context, data.index);
-    parent?.currentDragOn?.widget
-        .insertFunction(context, widget.pos, data.index);
+    var removed = widget.removeFunction(context, data.index);
+    var toParent = parent?.currentDragOn?.widget;
+    toParent?.insertFunction(
+      context,
+      from: widget.pos.addLast(data.index),
+      to: toParent.pos.addLast(0),
+      removed: removed,
+    );
   }
 
   void register(
