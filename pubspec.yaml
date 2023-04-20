@@ -1,5 +1,5 @@
 name: multi_level_draggable
-description: A new Flutter project.
+description: Draggable widget with multi-level drag and drop support.
 version: 0.0.1
 homepage: https://github.com/n7484443/multi_level_draggable
 
@@ -10,9 +10,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_web_plugins:
-    sdk: flutter
-  plugin_platform_interface: ^2.0.2
 
 dev_dependencies:
   flutter_test:
