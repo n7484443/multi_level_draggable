@@ -137,10 +137,21 @@ class MultiLevelDraggableState extends State<MultiLevelDraggable> {
     var parent = MultiLevelDraggableParentState.maybeOf(context);
     var removed = widget.removeFunction(context, data.index);
     var toParent = parent?.currentDragOn?.widget;
-    toParent?.insertFunction(
+
+    var from = widget.pos.addLast(data.index);
+    var to = toParent!.pos.addLast(0);
+    var isSameParent = widget.pos.contain(to);
+    if (isSameParent) {
+      if (data.index < to.data[from.length - 1]) {
+        var copy = [...to.data];
+        copy[from.length - 1] -= 1;
+        to = Pos(data: copy);
+      }
+    }
+    toParent.insertFunction(
       context,
-      from: widget.pos.addLast(data.index),
-      to: toParent.pos.addLast(0),
+      from: from,
+      to: to,
       removed: removed,
     );
   }

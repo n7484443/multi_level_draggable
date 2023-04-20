@@ -59,18 +59,19 @@ class _MyAppState extends State<MyApp> {
       },
       itemCount: dataInput.length,
       removeFunction: (context, index) {
+        List currentArray = data;
+        for (var i in currentPos.data) {
+          currentArray = currentArray[i];
+        }
+        var removed = currentArray[index];
         setState(() {
-          List currentArray = data;
-          for (var i in currentPos.data) {
-            currentArray = currentArray[i];
-          }
           currentArray.removeAt(index);
         });
+        return removed;
       },
       insertFunction: (context,
           {required Pos from, required Pos to, required dynamic removed}) {
         setState(() {
-          print(to);
           var currentArray = data;
           for (var i in to.removeLast().data) {
             currentArray = currentArray[i];
