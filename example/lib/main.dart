@@ -19,12 +19,12 @@ class _MyAppState extends State<MyApp> {
     1,
     2,
     3,
-    [
+    <dynamic>[
       0,
       1,
       2,
       3,
-      [0, 1, 2, 3, 4],
+      <dynamic>[0, 1, 2, 3, 4],
       4,
       5,
       6
@@ -76,7 +76,10 @@ class _MyAppState extends State<MyApp> {
           for (var i in to.removeLast().data) {
             currentArray = currentArray[i];
           }
-          currentArray.insert(to.last, removed);
+          currentArray.insert(
+              to.last,
+              removed
+          );
         });
       },
     );
