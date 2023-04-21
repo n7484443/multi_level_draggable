@@ -142,7 +142,7 @@ class MultiLevelDraggableState extends State<MultiLevelDraggable> {
     var to = toParent!.pos.addLast(0);
     var isSameParent = widget.pos.contain(to);
     if (isSameParent) {
-      if (data.index < to.data[from.length - 1]) {
+      if (from.length <= to.length && data.index < to.data[from.length - 1]) {
         var copy = [...to.data];
         copy[from.length - 1] -= 1;
         to = Pos(data: copy);
